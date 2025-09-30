@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compare</title>
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style/earth.css" />
+</head>
+<body class="bg-black">
+  <div class="fixed inset-0 grid grid-rows-[auto,1fr]">
+    <!-- Controls -->
+    <div class="bg-gradient-to-r from-slate-900/90 via-gray-900/90 to-slate-900/90 backdrop-blur-xl border-b border-white/10 px-3 py-3 md:px-6 md:py-4 flex items-center justify-between z-10">
+      <a href="/public/EARTH.html" class="text-xs px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10">Back</a>
+      <div class="flex items-center gap-2">
+        <button id="cmpMenuButton" class="group relative w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 hover:from-indigo-500/30 hover:via-purple-500/30 hover:to-pink-500/30 backdrop-blur-xl text-white shadow-2xl border border-white/20 hover:border-white/30 transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center md:w-12 md:h-12">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 transition-transform group-hover:scale-110 md:w-6 md:h-6">
+            <path d="M3 7h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+          </svg>
+          <div class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full animate-pulse"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="cmpMenuPanel" class="hidden fixed top-16 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl rounded-2xl bg-gradient-to-br from-slate-900/95 via-gray-900/95 to-slate-900/95 text-white shadow-2xl border border-white/20 backdrop-blur-xl overflow-hidden z-20">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400"></div>
+          <div class="text-sm font-semibold text-white">Compare Settings</div>
+        </div>
+        <button id="cmpMenuClose" class="text-zinc-300 hover:text-white">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6.225 4.811L4.81 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586 6.225 4.811z"/></svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
+        <!-- Base -->
+        <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+          <div class="text-sm font-medium mb-2">Base Theme</div>
+          <select id="cmpBase" class="w-full bg-zinc-800/80 border border-white/10 rounded-md px-2 py-2 text-sm text-white shadow-inner">
+            <option value="BlueMarble_NextGeneration" selected>BlueMarble</option>
+            <option value="VIIRS_NOAA21_CorrectedReflectance_TrueColor">VIIRS NOAA-21 True Color</option>
+            <option value="MODIS_Terra_CorrectedReflectance_TrueColor">MODIS Terra True Color</option>
+          </select>
+        </div>
+        <!-- Date Range -->
+        <div class="rounded-xl bg-white/5 border border-white/10 p-4">
+          <div class="text-sm font-medium mb-2">Date Range</div>
+          <div class="flex items-center gap-3">
+            <div class="flex-1">
+              <label class="block text-xs text-zinc-400 mb-1">From</label>
+              <input id="cmpFrom" type="date" class="w-full bg-zinc-800/80 border border-white/10 rounded-md px-2 py-2 text-sm text-white" />
+            </div>
+            <div class="flex-1">
+              <label class="block text-xs text-zinc-400 mb-1">To</label>
+              <input id="cmpTo" type="date" class="w-full bg-zinc-800/80 border border-white/10 rounded-md px-2 py-2 text-sm text-white" />
+            </div>
+          </div>
+        </div>
+        <!-- Layers -->
+        <div class="md:col-span-2 rounded-xl bg-white/5 border border-white/10 p-4">
+          <div class="text-sm font-medium mb-2">Data Layers</div>
+          <div class="flex flex-wrap gap-2">
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium hover:from-green-500/30 hover:to-emerald-500/30 transition-all"><input id="cmpNdvi" type="checkbox" class="mr-2 align-middle">NDVI</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium hover:from-orange-500/30 hover:to-amber-500/30 transition-all"><input id="cmpLst" type="checkbox" class="mr-2 align-middle">LST (Day)</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-medium hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"><input id="cmpGedi" type="checkbox" class="mr-2 align-middle">GEDI Biomass</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium hover:from-pink-500/30 hover:to-rose-500/30 transition-all"><input id="cmpCO" type="checkbox" class="mr-2 align-middle">AIRS CO 500 hPa</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 border border-purple-500/30 text-xs font-medium hover:from-purple-500/30 hover:to-fuchsia-500/30 transition-all"><input id="cmpMISR" type="checkbox" class="mr-2 align-middle">MISR Radiance (Monthly)</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-medium hover:from-yellow-500/30 hover:to-amber-500/30 transition-all"><input id="cmpCloud" type="checkbox" class="mr-2 align-middle">Cloud Top Pressure</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/20 to-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-medium hover:from-indigo-500/30 hover:to-sky-500/30 transition-all"><input id="cmpCeres" type="checkbox" class="mr-2 align-middle">CERES Longwave Flux</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 border border-red-500/30 text-xs font-medium hover:from-red-500/30 hover:to-rose-500/30 transition-all"><input id="cmpMopitt" type="checkbox" class="mr-2 align-middle">MOPITT CO</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-gray-500/20 to-slate-500/20 text-gray-300 border border-gray-500/30 text-xs font-medium hover:from-gray-500/30 hover:to-slate-500/30 transition-all"><input id="cmpLabels" type="checkbox" class="mr-2 align-middle" checked>Place Labels</label>
+            <label class="px-3 py-1.5 rounded-full bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 border border-teal-500/30 text-xs font-medium hover:from-teal-500/30 hover:to-emerald-500/30 transition-all"><input id="cmpSettlements" type="checkbox" class="mr-2 align-middle">Settlements</label>
+          </div>
+        </div>
+        <!-- Actions -->
+        <div class="md:col-span-2 flex items-center justify-between gap-3">
+          <div class="text-xs text-zinc-300" id="cmpStatus"></div>
+          <div class="flex items-center gap-2">
+            <button id="cmpBuild" class="text-xs px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white shadow">Build</button>
+            <button id="cmpPlay" class="text-xs px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white shadow">Play</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map viewport -->
+    <div class="relative">
+      <div id="cmpContainer" class="absolute inset-0"></div>
+    </div>
+  </div>
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <script src="/script/compare.js"></script>
+</body>
+</html>
+
+
