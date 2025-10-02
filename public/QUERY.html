@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Natural Language Query • AI-Powered Earth Data Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300a2ff"/><circle cx="50" cy="50" r="42" fill="%23111" opacity=".15"/></svg>' />
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      min-height: 100vh;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .query-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .suggestion-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      transition: all 0.3s ease;
+    }
+    .suggestion-card:hover {
+      border-color: rgba(16, 185, 129, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+    }
+    .result-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(217, 119, 6, 0.05) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      transition: all 0.3s ease;
+    }
+    .result-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.15);
+    }
+    .map-container {
+      height: 300px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    @media (min-width: 768px) {
+      .map-container {
+        height: 400px;
+      }
+    }
+    .typing-indicator {
+      animation: typing 1.5s infinite;
+    }
+    @keyframes typing {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+    .animate-pulse-slow {
+      animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="gradient-bg text-white min-h-screen">
+  <!-- Navigation Header -->
+  <nav class="glass-panel border-b border-slate-700/50 px-4 py-4 md:px-6">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3 md:gap-4">
+        <a href="/public/EARTH.html" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-all duration-200 hover:scale-105">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+          </svg>
+          <span class="text-sm font-medium hidden sm:inline">Back to Earth</span>
+        </a>
+        <div class="h-6 w-px bg-slate-600 hidden md:block"></div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Natural Language Query</h1>
+          <p class="text-xs text-slate-400">AI-Powered Earth Data Search</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse-slow"></div>
+          <span class="text-xs text-blue-300 hidden sm:inline">Query AI Active</span>
+        </div>
+        <button id="voiceBtn" class="px-3 py-2 md:px-4 md:py-2 btn-primary rounded-lg text-sm font-medium">
+          <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+          </svg>
+          Voice Query
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto px-4 py-4 md:py-6 max-w-7xl">
+    <!-- Main Query Interface -->
+    <div class="glass-panel rounded-xl p-4 md:p-8 mb-6">
+      <div class="text-center mb-6 md:mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold mb-4">Ask Anything About Earth Data</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto text-sm md:text-base">Use natural language to search, analyze, and visualize environmental data. Our AI understands complex queries and automatically selects the best data sources and visualizations.</p>
+      </div>
+
+      <!-- Query Input -->
+      <div class="max-w-4xl mx-auto mb-6">
+        <div class="relative">
+          <textarea id="queryInput" placeholder="Try: 'Show me wildfires in California last month with temperature data' or 'Compare sea surface temperatures between 2020 and 2024 in the Pacific'" class="w-full h-20 md:h-24 px-4 md:px-6 py-3 md:py-4 bg-slate-800/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 resize-none text-sm md:text-base"></textarea>
+          <div class="absolute bottom-3 md:bottom-4 right-3 md:right-4 flex items-center gap-2">
+            <button id="submitQuery" class="px-4 md:px-6 py-2 btn-primary rounded-lg font-medium text-sm transition-all duration-300">
+              <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Suggestions -->
+      <div class="max-w-4xl mx-auto">
+        <h3 class="text-sm font-medium text-slate-300 mb-3">Try these examples:</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Wildfire Analysis</div>
+            <div class="text-xs text-slate-400">"Show wildfire hotspots in Australia with NDVI data"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Climate Comparison</div>
+            <div class="text-xs text-slate-400">"Compare temperatures in Arctic vs Antarctic regions"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Ocean Analysis</div>
+            <div class="text-xs text-slate-400">"Find sea surface temperature anomalies in Pacific"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Precipitation Trends</div>
+            <div class="text-xs text-slate-400">"Show rainfall patterns in Amazon rainforest"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Urban Heat Islands</div>
+            <div class="text-xs text-slate-400">"Analyze urban heat in major cities worldwide"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200">
+            <div class="text-sm font-medium text-emerald-300 mb-1">Vegetation Health</div>
+            <div class="text-xs text-slate-400">"Monitor forest health using satellite imagery"</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="hidden space-y-4 md:space-y-6">
+      <!-- Query Understanding -->
+      <div class="glass-panel rounded-xl p-4 md:p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          Query Understanding
+        </h3>
+        <div class="query-card rounded-lg p-3 md:p-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <div class="text-sm font-medium text-blue-300 mb-2">Location Detected</div>
+              <div class="text-slate-300" id="detectedLocation">California, USA</div>
+              <div class="text-xs text-slate-500" id="detectedCoordinates">Coordinates: 36.7783°N, 119.4179°W</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-blue-300 mb-2">Time Period</div>
+              <div class="text-slate-300" id="detectedTime">Last 30 Days</div>
+              <div class="text-xs text-slate-500" id="detectedDates">2024-11-01 to 2024-12-01</div>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-blue-300 mb-2">Data Sources</div>
+              <div class="text-slate-300" id="detectedSources">MODIS, VIIRS, FIRMS</div>
+              <div class="text-xs text-slate-500" id="detectedTypes">Wildfire & Temperature Data</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Map -->
+      <div class="glass-panel rounded-xl p-4 md:p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          Interactive Results Map
+        </h3>
+        <div class="map-container bg-slate-900/50 rounded-lg border border-slate-600 relative overflow-hidden">
+          <div id="map" class="w-full h-full"></div>
+          <div id="mapPlaceholder" class="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+            <div class="text-center">
+              <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <h3 class="text-lg font-semibold mb-2 text-blue-300">Loading Interactive Map</h3>
+              <p class="text-sm text-slate-400 mb-4">Initializing Earth visualization...</p>
+              <div class="text-xs text-slate-500 space-y-1">
+                <div>• Loading satellite imagery</div>
+                <div>• Processing data layers</div>
+                <div>• Setting up interactive controls</div>
+              </div>
+            </div>
+          </div>
+          <div class="absolute top-2 md:top-4 right-2 md:right-4 glass-panel rounded-lg p-2 md:p-3">
+            <div class="text-xs font-medium mb-2">Active Layers</div>
+            <div class="space-y-1 text-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-500 rounded"></div>
+                <span class="text-slate-300">Wildfire Hotspots</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-amber-500 rounded"></div>
+                <span class="text-slate-300">Temperature Anomalies</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-emerald-500 rounded"></div>
+                <span class="text-slate-300">Vegetation Index</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Analysis Results -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="glass-panel rounded-xl p-4 md:p-6">
+          <h3 class="text-lg font-semibold mb-4">Statistical Summary</h3>
+          <div class="space-y-3 md:space-y-4">
+            <div class="result-card rounded-lg p-3 md:p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Active Fire Detections</span>
+                <span class="text-lg font-bold text-red-400" id="fireCount">1,247</span>
+              </div>
+              <div class="text-xs text-slate-400">↑ 23% from previous month</div>
+            </div>
+            <div class="result-card rounded-lg p-3 md:p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Average Temperature</span>
+                <span class="text-lg font-bold text-amber-400" id="avgTemp">28.5°C</span>
+              </div>
+              <div class="text-xs text-slate-400">↑ 3.2°C above normal</div>
+            </div>
+            <div class="result-card rounded-lg p-3 md:p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Affected Area</span>
+                <span class="text-lg font-bold text-yellow-400" id="affectedArea">45,230 km²</span>
+              </div>
+              <div class="text-xs text-slate-400">Wildfire risk zones</div>
+            </div>
+            <div class="result-card rounded-lg p-3 md:p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Vegetation Health</span>
+                <span class="text-lg font-bold text-emerald-400" id="vegetationHealth">0.42</span>
+              </div>
+              <div class="text-xs text-slate-400">NDVI average (stressed)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-xl p-4 md:p-6">
+          <h3 class="text-lg font-semibold mb-4">AI Insights</h3>
+          <div id="aiInsights" class="space-y-3 md:space-y-4">
+            <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 md:p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-red-400 mt-2"></div>
+                <div>
+                  <h4 class="font-medium text-red-300 mb-1">High Fire Risk Detected</h4>
+                  <p class="text-sm text-slate-300">Current conditions show elevated wildfire risk due to low humidity (18%) and high temperatures. Wind patterns suggest potential rapid spread in northern regions.</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 md:p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-amber-400 mt-2"></div>
+                <div>
+                  <h4 class="font-medium text-amber-300 mb-1">Temperature Anomaly</h4>
+                  <p class="text-sm text-slate-300">Land surface temperatures are 3.2°C above seasonal average, particularly in Central Valley and Sierra Nevada foothills. This correlates with reduced soil moisture.</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 md:p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-yellow-400 mt-2"></div>
+                <div>
+                  <h4 class="font-medium text-yellow-300 mb-1">Vegetation Stress</h4>
+                  <p class="text-sm text-slate-300">NDVI values indicate moderate to severe vegetation stress across 60% of the analyzed area. This increases fire susceptibility and reduces natural fire breaks.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Queries -->
+      <div class="glass-panel rounded-xl p-4 md:p-6">
+        <h3 class="text-lg font-semibold mb-4">Related Queries You Might Ask</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Show historical wildfire patterns in this region"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Compare with wildfire seasons from 2020-2023"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Predict fire spread based on wind patterns"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Show air quality impact from these fires"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Find similar conditions in other regions"</div>
+          </button>
+          <button class="suggestion-card rounded-lg p-3 text-left transition-all duration-200 hover:scale-105">
+            <div class="text-sm text-blue-300">"Analyze recovery patterns after fires"</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Export Options -->
+      <div class="glass-panel rounded-xl p-4 md:p-6">
+        <h3 class="text-lg font-semibold mb-4">Export & Share Results</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button class="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+              </svg>
+              Download Report
+            </div>
+          </button>
+          <button class="px-4 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              Export Data
+            </div>
+          </button>
+          <button class="px-4 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+              </svg>
+              Share Query
+            </div>
+          </button>
+          <button class="px-4 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+              Save Query
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing Modal -->
+  <div id="processingModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="glass-panel rounded-xl p-6 md:p-8 max-w-md w-full mx-4">
+      <div class="text-center">
+        <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+        <h3 class="text-lg font-semibold mb-2">Processing Your Query</h3>
+        <p class="text-sm text-slate-400 mb-4">AI is analyzing your request and selecting optimal data sources...</p>
+        <div class="text-xs text-slate-500 space-y-1">
+          <div class="typing-indicator">• Parsing natural language query</div>
+          <div class="typing-indicator" style="animation-delay: 0.5s">• Identifying location and time parameters</div>
+          <div class="typing-indicator" style="animation-delay: 1s">• Selecting relevant NASA data layers</div>
+          <div class="typing-indicator" style="animation-delay: 1.5s">• Generating visualizations and insights</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapbox GL JS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  
+  <script>
+    // API Configuration
+    const GEMINI_API_KEY = 'AIzaSyCGYNwiZz-LZSURDdQZhmLVFTRI6cjtqm8';
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+    const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+    
+    // Set Mapbox access token
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    // Real data APIs
+    const NASA_API_KEY = 'DEMO_KEY';
+    const OPENWEATHER_API_KEY = 'your_openweather_key';
+
+    // Gemini API call function
+    async function callGeminiAPI(prompt) {
+      try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+      } catch (error) {
+        console.error('Gemini API Error:', error);
+        return 'Unable to process query at this time. Please try again later.';
+      }
+    }
+
+    // Parse natural language query using Gemini
+    async function parseNaturalLanguageQuery(query) {
+      const prompt = `
+        Parse this natural language query about Earth and environmental data: "${query}"
+
+        Extract and return a JSON object with:
+        {
+          "location": "specific location mentioned (city, region, coordinates) or null",
+          "timeframe": "time period mentioned (last month, 2020-2024, etc.) or null", 
+          "dataTypes": ["array of data types mentioned like wildfire, temperature, precipitation, vegetation, etc."],
+          "analysis": "type of analysis requested (show, compare, analyze, find, etc.)",
+          "coordinates": {"lat": number, "lon": number} or null,
+          "confidence": number between 0-100,
+          "interpretation": "human-readable interpretation of what the user wants"
+        }
+
+        Be specific and accurate. If location is mentioned, try to provide approximate coordinates.
+        Focus on environmental and Earth science data types.
+      `;
+
+      try {
+        const response = await callGeminiAPI(prompt);
+        try {
+          return JSON.parse(response);
+        } catch {
+          // Fallback parsing if JSON fails
+          return {
+            location: extractLocation(query),
+            timeframe: extractTimeframe(query),
+            dataTypes: extractDataTypes(query),
+            analysis: "analyze",
+            coordinates: null,
+            confidence: 60,
+            interpretation: response
+          };
+        }
+      } catch (error) {
+        console.error('Query parsing error:', error);
+        return null;
+      }
+    }
+
+    // Fallback extraction functions
+    function extractLocation(query) {
+      const locationPatterns = [
+        /in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+        /at\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+        /(California|Texas|Florida|New York|Alaska|Hawaii|Amazon|Arctic|Pacific|Atlantic)/gi
+      ];
+      
+      for (const pattern of locationPatterns) {
+        const match = query.match(pattern);
+        if (match) return match[1] || match[0];
+      }
+      return null;
+    }
+
+    function extractTimeframe(query) {
+      const timePatterns = [
+        /last\s+(month|week|year|decade)/gi,
+        /past\s+(\d+)\s+(days?|months?|years?)/gi,
+        /(\d{4})-(\d{4})/g,
+        /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/gi
+      ];
+      
+      for (const pattern of timePatterns) {
+        const match = query.match(pattern);
+        if (match) return match[0];
+      }
+      return null;
+    }
+
+    function extractDataTypes(query) {
+      const dataTypes = [];
+      const patterns = {
+        'wildfire': /fire|wildfire|burn/gi,
+        'temperature': /temperature|temp|heat|thermal/gi,
+        'precipitation': /rain|precipitation|rainfall|snow/gi,
+        'vegetation': /vegetation|forest|tree|plant|NDVI/gi,
+        'ocean': /ocean|sea|marine|SST|surface.*temperature/gi,
+        'air quality': /air.*quality|pollution|CO|carbon/gi
+      };
+      
+      for (const [type, pattern] of Object.entries(patterns)) {
+        if (pattern.test(query)) dataTypes.push(type);
+      }
+      
+      return dataTypes.length > 0 ? dataTypes : ['general'];
+    }
+
+    // Get real environmental data
+    async function getEnvironmentalData(location, dataTypes, timeframe) {
+      const data = {
+        location: location,
+        dataTypes: dataTypes,
+        timeframe: timeframe,
+        results: {}
+      };
+
+      // Get coordinates for location
+      if (location) {
+        try {
+          const coords = await geocodeLocation(location);
+          if (coords) {
+            data.coordinates = coords;
+            
+            // Get weather data
+            if (dataTypes.includes('temperature') || dataTypes.includes('general')) {
+              data.results.weather = await getWeatherData(coords.lat, coords.lon);
+            }
+            
+            // Get NASA satellite data
+            data.results.satellite = await getNASAData(coords.lat, coords.lon);
+          }
+        } catch (error) {
+          console.error('Data retrieval error:', error);
+        }
+      }
+
+      return data;
+    }
+
+    // Geocoding function
+    async function geocodeLocation(location) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          return {
+            lat: parseFloat(data[0].lat),
+            lon: parseFloat(data[0].lon),
+            display_name: data[0].display_name
+          };
+        }
+      } catch (error) {
+        console.error('Geocoding error:', error);
+      }
+      return null;
+    }
+
+    // Get weather data
+    async function getWeatherData(lat, lon) {
+      try {
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('Weather API Error:', error);
+      }
+      
+      // Mock data fallback
+      return {
+        main: { temp: 22.5, humidity: 68 },
+        weather: [{ main: 'Clear', description: 'clear sky' }],
+        wind: { speed: 3.2 }
+      };
+    }
+
+    // Get NASA data
+    async function getNASAData(lat, lon) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await fetch(`https://api.nasa.gov/planetary/earth/assets?lon=${lon}&lat=${lat}&date=${today}&dim=0.10&api_key=${NASA_API_KEY}`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('NASA API Error:', error);
+      }
+      return null;
+    }
+
+    // Generate AI insights
+    async function generateInsights(queryData, environmentalData) {
+      const prompt = `
+        As an environmental data analyst, provide insights based on this query and data:
+
+        User Query: "${queryData.interpretation}"
+        Location: ${environmentalData.location || 'Global'}
+        Data Types: ${queryData.dataTypes.join(', ')}
+        
+        Environmental Data:
+        ${JSON.stringify(environmentalData.results, null, 2)}
+
+        Provide:
+        1. Key findings and observations
+        2. Environmental patterns or anomalies
+        3. Potential risks or concerns
+        4. Recommendations for further analysis
+        5. Data quality and limitations
+
+        Format as clear, actionable insights with specific details.
+      `;
+
+      try {
+        return await callGeminiAPI(prompt);
+      } catch (error) {
+        console.error('Insights generation error:', error);
+        return 'Unable to generate insights at this time.';
+      }
+    }
+
+    // Initialize map
+    let map;
+    
+    function initMap(coordinates) {
+      const center = coordinates ? [coordinates.lon, coordinates.lat] : [-95.7129, 37.0902];
+      const zoom = coordinates ? 8 : 3;
+      
+      // Hide placeholder
+      const placeholder = document.getElementById('mapPlaceholder');
+      if (placeholder) {
+        placeholder.style.display = 'none';
+      }
+      
+      map = new mapboxgl.Map({
+        container: 'map',
+        style: {
+          version: 8,
+          sources: {
+            'blue-marble': {
+              type: 'raster',
+              tiles: [
+                'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/{Time}/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png'
+              ],
+              tileSize: 256,
+              attribution: 'NASA Blue Marble'
+            }
+          },
+          layers: [
+            {
+              id: 'blue-marble-layer',
+              type: 'raster',
+              source: 'blue-marble',
+              paint: {
+                'raster-opacity': 1.0
+              }
+            }
+          ]
+        },
+        center: center,
+        zoom: zoom
+      });
+
+      // Add navigation controls
+      map.addControl(new mapboxgl.NavigationControl());
+
+      // Add data layers when map loads
+      map.on('load', function() {
+        // Add wildfire hotspots layer
+        map.addSource('wildfire-hotspots', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { name: 'Wildfire Hotspot' },
+                geometry: {
+                  type: 'Point',
+                  coordinates: [coordinates ? coordinates.lon : -119.4179, coordinates ? coordinates.lat : 36.7783]
+                }
+              }
+            ]
+          }
+        });
+
+        map.addLayer({
+          id: 'wildfire-hotspots',
+          type: 'circle',
+          source: 'wildfire-hotspots',
+          paint: {
+            'circle-radius': 8,
+            'circle-color': '#ef4444',
+            'circle-opacity': 0.8,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+
+        // Add temperature anomalies layer
+        map.addSource('temperature-anomalies', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { temp: '+3.2°C' },
+                geometry: {
+                  type: 'Point',
+                  coordinates: [coordinates ? coordinates.lon + 0.1 : -119.3179, coordinates ? coordinates.lat + 0.1 : 36.8783]
+                }
+              }
+            ]
+          }
+        });
+
+        map.addLayer({
+          id: 'temperature-anomalies',
+          type: 'circle',
+          source: 'temperature-anomalies',
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#f59e0b',
+            'circle-opacity': 0.7,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
+      });
+
+      if (coordinates) {
+        // Add marker for the location
+        new mapboxgl.Marker({ color: '#ef4444' })
+          .setLngLat([coordinates.lon, coordinates.lat])
+          .setPopup(new mapboxgl.Popup().setHTML(`<h3>${coordinates.display_name || 'Location'}</h3>`))
+          .addTo(map);
+      }
+
+      return map;
+    }
+
+    // Update UI with results
+    function updateResults(queryData, environmentalData, insights) {
+      // Show results section
+      document.getElementById('resultsSection').classList.remove('hidden');
+
+      // Update query understanding
+      const locationEl = document.getElementById('detectedLocation');
+      const coordinatesEl = document.getElementById('detectedCoordinates');
+      const timeEl = document.getElementById('detectedTime');
+      const datesEl = document.getElementById('detectedDates');
+      const sourcesEl = document.getElementById('detectedSources');
+      const typesEl = document.getElementById('detectedTypes');
+
+      if (locationEl) locationEl.textContent = queryData.location || 'Global';
+      if (coordinatesEl) coordinatesEl.textContent = queryData.coordinates ? `Coordinates: ${queryData.coordinates.lat.toFixed(4)}°, ${queryData.coordinates.lon.toFixed(4)}°` : 'Coordinates: Not specified';
+      if (timeEl) timeEl.textContent = queryData.timeframe || 'Current';
+      if (datesEl) datesEl.textContent = 'Based on query parameters';
+      if (sourcesEl) sourcesEl.textContent = 'NASA MODIS, VIIRS, FIRMS';
+      if (typesEl) typesEl.textContent = queryData.dataTypes.join(', ') || 'Environmental Data';
+
+      // Initialize map
+      setTimeout(() => {
+        initMap(queryData.coordinates);
+      }, 1000);
+
+      // Update statistics
+      if (environmentalData.results.weather) {
+        const weather = environmentalData.results.weather;
+
+        // Temperature
+        const tempValue = document.getElementById('avgTemp');
+        if (tempValue) tempValue.textContent = `${weather.main.temp.toFixed(1)}°C`;
+
+        // Humidity
+        const humidityValue = document.getElementById('vegetationHealth');
+        if (humidityValue) humidityValue.textContent = `${weather.main.humidity}%`;
+      }
+
+      // Update AI insights
+      const aiInsights = document.getElementById('aiInsights');
+      if (aiInsights) {
+        aiInsights.innerHTML = `
+          <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 md:p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-blue-400 mt-2"></div>
+              <div>
+                <h4 class="font-medium text-blue-300 mb-1">AI Analysis Results</h4>
+                <div class="text-sm text-slate-300 whitespace-pre-line">${insights}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Show placeholder data immediately
+    function showPlaceholderData() {
+      // Show results section with placeholder data
+      const resultsSection = document.getElementById('resultsSection');
+      if (resultsSection) {
+        resultsSection.classList.remove('hidden');
+      }
+
+      // Update query understanding with placeholder
+      const locationEl = document.getElementById('detectedLocation');
+      const coordinatesEl = document.getElementById('detectedCoordinates');
+      const timeEl = document.getElementById('detectedTime');
+      const datesEl = document.getElementById('detectedDates');
+      const sourcesEl = document.getElementById('detectedSources');
+      const typesEl = document.getElementById('detectedTypes');
+
+      if (locationEl) locationEl.textContent = 'California, USA';
+      if (coordinatesEl) coordinatesEl.textContent = 'Coordinates: 36.7783°N, 119.4179°W';
+      if (timeEl) timeEl.textContent = 'Last 30 Days';
+      if (datesEl) datesEl.textContent = '2024-11-01 to 2024-12-01';
+      if (sourcesEl) sourcesEl.textContent = 'MODIS, VIIRS, FIRMS';
+      if (typesEl) typesEl.textContent = 'Wildfire & Temperature Data';
+
+      // Update statistics with placeholder data
+      const fireCount = document.getElementById('fireCount');
+      const avgTemp = document.getElementById('avgTemp');
+      const affectedArea = document.getElementById('affectedArea');
+      const vegetationHealth = document.getElementById('vegetationHealth');
+
+      if (fireCount) fireCount.textContent = '1,247';
+      if (avgTemp) avgTemp.textContent = '28.5°C';
+      if (affectedArea) affectedArea.textContent = '45,230 km²';
+      if (vegetationHealth) vegetationHealth.textContent = '0.42';
+
+      // Update AI insights with placeholder
+      const aiInsights = document.getElementById('aiInsights');
+      if (aiInsights) {
+        aiInsights.innerHTML = `
+          <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 md:p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-blue-400 mt-2"></div>
+              <div>
+                <h4 class="font-medium text-blue-300 mb-1">Loading AI Analysis...</h4>
+                <p class="text-sm text-slate-300">Processing your query and analyzing environmental data...</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Initialize map with placeholder
+      setTimeout(() => {
+        initMap({ lat: 36.7783, lon: -119.4179, display_name: 'California, USA' });
+      }, 2000);
+    }
+
+    // Main functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const queryInput = document.getElementById('queryInput');
+      const submitBtn = document.getElementById('submitQuery');
+      const resultsSection = document.getElementById('resultsSection');
+      const processingModal = document.getElementById('processingModal');
+      const voiceBtn = document.getElementById('voiceBtn');
+
+      // Handle query submission
+      async function handleQuery() {
+        const query = queryInput.value.trim();
+        if (!query) return;
+
+        processingModal.classList.remove('hidden');
+
+        try {
+          // Parse natural language query
+          const queryData = await parseNaturalLanguageQuery(query);
+
+          if (queryData) {
+            // Get environmental data
+            const environmentalData = await getEnvironmentalData(
+              queryData.location,
+              queryData.dataTypes,
+              queryData.timeframe
+            );
+
+            // Generate AI insights
+            const insights = await generateInsights(queryData, environmentalData);
+
+            // Update UI
+            updateResults(queryData, environmentalData, insights);
+
+            // Scroll to results
+            setTimeout(() => {
+              resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+          }
+        } catch (error) {
+          console.error('Query processing error:', error);
+          alert('Unable to process your query. Please check your internet connection and try again.');
+        } finally {
+          processingModal.classList.add('hidden');
+        }
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener('click', handleQuery);
+      }
+
+      if (queryInput) {
+        queryInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleQuery();
+          }
+        });
+      }
+
+      // Handle suggestion clicks
+      document.querySelectorAll('.suggestion-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const suggestion = card.querySelector('.text-xs').textContent;
+          if (queryInput) queryInput.value = suggestion.replace(/"/g, '');
+          handleQuery();
+        });
+      });
+
+      // Voice input (basic implementation)
+      if (voiceBtn) {
+        voiceBtn.addEventListener('click', function() {
+          if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+              voiceBtn.style.color = '#ef4444';
+            };
+
+            recognition.onresult = function(event) {
+              const transcript = event.results[0][0].transcript;
+              if (queryInput) queryInput.value = transcript;
+              handleQuery();
+            };
+
+            recognition.onerror = function() {
+              alert('Voice recognition error. Please try again.');
+            };
+
+            recognition.onend = function() {
+              voiceBtn.style.color = '';
+            };
+
+            recognition.start();
+          } else {
+            alert('Voice input not supported in this browser.');
+          }
+        });
+      }
+
+      // Related query clicks
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('.suggestion-card') && e.target.closest('#resultsSection')) {
+          const suggestion = e.target.textContent;
+          if (queryInput) queryInput.value = suggestion.replace(/"/g, '');
+          if (queryInput) queryInput.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+
+      // Export buttons
+      document.querySelectorAll('[class*="from-blue-600"], [class*="from-green-600"], [class*="from-purple-600"], [class*="from-orange-600"]').forEach(btn => {
+        if (btn.textContent.includes('Download') || btn.textContent.includes('Export') || btn.textContent.includes('Share') || btn.textContent.includes('Save')) {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Export functionality would be implemented here');
+          });
+        }
+      });
+
+      // Show placeholder data immediately
+      showPlaceholderData();
+      
+      // Auto-demo with sample query
+      setTimeout(() => {
+        if (queryInput) {
+          queryInput.value = 'Show me wildfires in California with temperature data';
+          handleQuery();
+        }
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

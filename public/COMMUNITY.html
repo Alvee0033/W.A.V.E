@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research Communities • Scientific Collaboration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2300a2ff"/><circle cx="50" cy="50" r="42" fill="%23111" opacity=".15"/></svg>' />
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      min-height: 100vh;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .community-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      transition: all 0.3s ease;
+    }
+    .community-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+    .filter-btn {
+      transition: all 0.3s ease;
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      color: white;
+    }
+    .filter-btn:not(.active) {
+      background: rgba(30, 41, 59, 0.5);
+      color: #94a3b8;
+    }
+    .filter-btn:not(.active):hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+  </style>
+</head>
+<body class="gradient-bg text-white min-h-screen">
+  <!-- Navigation Header -->
+  <nav class="glass-panel border-b border-slate-700/50 px-4 py-4 md:px-6">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3 md:gap-4">
+        <a href="/public/EARTH.html" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-all duration-200 hover:scale-105">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+          </svg>
+          <span class="text-sm font-medium hidden sm:inline">Back to Earth</span>
+        </a>
+        <div class="h-6 w-px bg-slate-600 hidden md:block"></div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Research Communities</h1>
+          <p class="text-xs text-slate-400">Scientific Collaboration Platform</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+        <span class="text-xs text-emerald-300 hidden sm:inline">Communities Active</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto px-4 py-4 md:py-6 max-w-7xl">
+    <!-- Header Section -->
+    <div class="glass-panel rounded-xl p-4 md:p-8 mb-6">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl md:text-3xl font-bold mb-4">Join Expert-Led Research Communities</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">Connect with scientists, researchers, and experts advancing Earth and ocean science through collaborative projects and knowledge sharing.</p>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="flex flex-col lg:flex-row gap-4 mb-6">
+        <div class="flex-1">
+          <input id="communitySearch" type="text" placeholder="Search communities, topics, or researchers..." class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50">
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="filter-btn active px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="all">All</button>
+          <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="ocean">Oceanography</button>
+          <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="climate">Climate Modeling</button>
+          <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="remote">Remote Sensing</button>
+          <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="ecology">Marine Ecology</button>
+          <button class="filter-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200" data-filter="space">Space Weather</button>
+        </div>
+      </div>
+
+      <!-- Community Grid -->
+      <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="communityGrid">
+        <article class="community-card rounded-xl overflow-hidden" data-tags="ocean remote">
+          <div class="aspect-video bg-gradient-to-br from-blue-600/20 to-cyan-600/20 flex items-center justify-center relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop" alt="Ocean SST Analysis" class="w-full h-full object-cover opacity-60" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          </div>
+          <div class="p-4 md:p-6">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-bold text-white mb-1">Global SST Analysis</h2>
+              <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">2.4k members • Active</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-4 line-clamp-3">Collaborate on sea surface temperature models, anomaly detection, and multi-sensor blending using GHRSST MUR and AVHRR.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">GHRSST</span>
+              <span class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">AVHRR</span>
+              <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Anomalies</span>
+            </div>
+            <div class="flex gap-3">
+              <button class="join-btn btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-1" data-community="sst">Join Community</button>
+              <a href="#" class="text-slate-400 hover:text-white transition-colors p-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="community-card rounded-xl overflow-hidden" data-tags="climate remote">
+          <div class="aspect-video bg-gradient-to-br from-emerald-600/20 to-green-600/20 flex items-center justify-center relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=600&h=400&fit=crop" alt="Climate Analysis" class="w-full h-full object-cover opacity-60" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          </div>
+          <div class="p-4 md:p-6">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-bold text-white mb-1">Climate Reanalysis & Forecasting</h2>
+              <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">1.8k members • Active</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-4 line-clamp-3">Work with reanalysis datasets and seasonal forecasts to build robust climate indicators and validation pipelines.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded">ERA5</span>
+              <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">CMIP</span>
+              <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Validation</span>
+            </div>
+            <div class="flex gap-3">
+              <button class="join-btn btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-1" data-community="climate">Join Community</button>
+              <a href="#" class="text-slate-400 hover:text-white transition-colors p-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="community-card rounded-xl overflow-hidden" data-tags="remote ocean">
+          <div class="aspect-video bg-gradient-to-br from-purple-600/20 to-indigo-600/20 flex items-center justify-center relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=600&h=400&fit=crop" alt="Satellite Remote Sensing" class="w-full h-full object-cover opacity-60" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          </div>
+          <div class="p-4 md:p-6">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-bold text-white mb-1">Satellite Remote Sensing</h2>
+              <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">3.2k members • Active</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-4 line-clamp-3">Process and interpret multispectral imagery, atmospheric products, and ocean color for research and applications.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">MODIS</span>
+              <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">VIIRS</span>
+              <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">L2/L3</span>
+            </div>
+            <div class="flex gap-3">
+              <button class="join-btn btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-1" data-community="remote">Join Community</button>
+              <a href="#" class="text-slate-400 hover:text-white transition-colors p-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="community-card rounded-xl overflow-hidden" data-tags="ecology ocean">
+          <div class="aspect-video bg-gradient-to-br from-teal-600/20 to-cyan-600/20 flex items-center justify-center relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop" alt="Marine Ecology" class="w-full h-full object-cover opacity-60" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          </div>
+          <div class="p-4 md:p-6">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-bold text-white mb-1">Marine Ecology & Fisheries</h2>
+              <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">940 members • Active</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-4 line-clamp-3">Integrate habitat models, species distribution, and environmental drivers to support sustainable fisheries management.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="text-xs bg-teal-500/20 text-teal-300 px-2 py-1 rounded">SDM</span>
+              <span class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded">Habitat</span>
+              <span class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Fisheries</span>
+            </div>
+            <div class="flex gap-3">
+              <button class="join-btn btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-1" data-community="ecology">Join Community</button>
+              <a href="#" class="text-slate-400 hover:text-white transition-colors p-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="community-card rounded-xl overflow-hidden" data-tags="space climate">
+          <div class="aspect-video bg-gradient-to-br from-amber-600/20 to-orange-600/20 flex items-center justify-center relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=600&h=400&fit=crop" alt="Space Weather" class="w-full h-full object-cover opacity-60" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+          </div>
+          <div class="p-4 md:p-6">
+            <div class="mb-3">
+              <h2 class="text-lg md:text-xl font-bold text-white mb-1">Space Weather & Aerosols</h2>
+              <span class="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">1.1k members • Active</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-4 line-clamp-3">Study solar-terrestrial interactions and aerosol transport impacts on climate and air quality across regions.</p>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">AOD</span>
+              <span class="text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded">Solar</span>
+              <span class="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">Transport</span>
+            </div>
+            <div class="flex gap-3">
+              <button class="join-btn btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-1" data-community="space">Join Community</button>
+              <a href="#" class="text-slate-400 hover:text-white transition-colors p-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <script type="module" src="/public/script/firebase-init.js"></script>
+    <script src="script/community.js"></script>
+  </body>
+  </html>

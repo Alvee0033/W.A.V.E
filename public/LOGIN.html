@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>W.A.V.E • Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="./script/firebase-init.js"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    .glass { backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-zinc-100">
+  <div class="relative isolate">
+    <!-- Decorative background glow -->
+    <div class="pointer-events-none absolute inset-0">
+      <div class="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-fuchsia-600/10 blur-3xl"></div>
+      <div class="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl"></div>
+    </div>
+
+    <!-- Center content -->
+    <div class="relative mx-auto max-w-md px-6 py-16">
+      <!-- Brand -->
+      <div class="mb-8 text-center">
+        <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20">
+          <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <h1 class="text-3xl font-semibold tracking-tight">W.A.V.E</h1>
+        <p class="mt-1 text-sm text-zinc-400">World Analysis & Visualization Engine</p>
+      </div>
+
+      <!-- Auth Card -->
+      <div class="glass rounded-2xl border border-white/10 bg-zinc-900/60 shadow-2xl">
+        <div class="border-b border-white/10 px-5 py-4">
+          <div class="flex items-center gap-2 text-sm">
+            <button id="tabSignIn" class="rounded-md px-3 py-1.5 bg-zinc-800 text-zinc-100 shadow-sm">Sign In</button>
+            <button id="tabSignUp" class="rounded-md px-3 py-1.5 text-zinc-400 hover:text-zinc-100">Sign Up</button>
+          </div>
+        </div>
+
+        <!-- Sign In -->
+        <div id="viewSignIn" class="px-6 py-6 space-y-4">
+          <div>
+            <label for="signInEmail" class="block text-sm text-zinc-300">Email</label>
+            <input id="signInEmail" type="email" autocomplete="email" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="you@example.com" required />
+          </div>
+          <div>
+            <div class="flex items-center justify-between">
+              <label for="signInPassword" class="block text-sm text-zinc-300">Password</label>
+              <button id="forgotBtn" type="button" class="text-xs text-blue-400 hover:text-blue-300">Forgot?</button>
+            </div>
+            <input id="signInPassword" type="password" autocomplete="current-password" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your password" required />
+          </div>
+          <button id="emailSignInBtn" type="button" class="mt-2 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500">Sign In</button>
+
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+            <div class="relative flex justify-center"><span class="bg-zinc-900/60 px-2 text-xs text-zinc-400">Or continue with</span></div>
+          </div>
+
+          <button id="googleSignInBtn" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Sign in with Google</span>
+          </button>
+        </div>
+
+        <!-- Sign Up -->
+        <div id="viewSignUp" class="hidden px-6 py-6 space-y-4">
+          <div>
+            <label for="signUpName" class="block text-sm text-zinc-300">Full name</label>
+            <input id="signUpName" type="text" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Jane Doe" required />
+          </div>
+          <div>
+            <label for="signUpEmail" class="block text-sm text-zinc-300">Email</label>
+            <input id="signUpEmail" type="email" autocomplete="email" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="you@example.com" required />
+          </div>
+          <div>
+            <label for="signUpPassword" class="block text-sm text-zinc-300">Password</label>
+            <input id="signUpPassword" type="password" autocomplete="new-password" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Create a password" required />
+          </div>
+          <div>
+            <label for="signUpConfirm" class="block text-sm text-zinc-300">Confirm password</label>
+            <input id="signUpConfirm" type="password" autocomplete="new-password" class="mt-1 w-full rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Repeat password" required />
+          </div>
+          <button id="emailSignUpBtn" type="button" class="mt-2 w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500">Create Account</button>
+
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+            <div class="relative flex justify-center"><span class="bg-zinc-900/60 px-2 text-xs text-zinc-400">Or sign up with</span></div>
+          </div>
+
+          <button id="googleSignUpBtn" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-700">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Sign up with Google</span>
+          </button>
+        </div>
+
+        <!-- Error toast -->
+        <div id="errorToast" class="hidden mx-6 mb-5 rounded-md border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-300"></div>
+      </div>
+
+      <!-- Footer link -->
+      <div class="mt-4 text-center text-xs text-zinc-500">
+        By continuing you agree to our <a class="text-blue-400 hover:text-blue-300" href="#">Terms</a> and <a class="text-blue-400 hover:text-blue-300" href="#">Privacy</a>.
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Logic -->
+  <script type="module">
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      onAuthStateChanged,
+      signOut,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      updateProfile,
+      sendPasswordResetEmail
+    } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
+
+    const auth = getAuth(window.firebase.app);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    // DOM
+    const tabSignIn = document.getElementById('tabSignIn');
+    const tabSignUp = document.getElementById('tabSignUp');
+    const viewSignIn = document.getElementById('viewSignIn');
+    const viewSignUp = document.getElementById('viewSignUp');
+    const errorToast = document.getElementById('errorToast');
+
+    const emailSignInBtn = document.getElementById('emailSignInBtn');
+    const emailSignUpBtn = document.getElementById('emailSignUpBtn');
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const googleSignUpBtn = document.getElementById('googleSignUpBtn');
+    const forgotBtn = document.getElementById('forgotBtn');
+
+    // Tab switching
+    tabSignIn.addEventListener('click', () => switchTab('in'));
+    tabSignUp.addEventListener('click', () => switchTab('up'));
+    function switchTab(which) {
+      const signInActive = which === 'in';
+      tabSignIn.className = 'rounded-md px-3 py-1.5 ' + (signInActive ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'text-zinc-400 hover:text-zinc-100');
+      tabSignUp.className = 'rounded-md px-3 py-1.5 ' + (!signInActive ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'text-zinc-400 hover:text-zinc-100');
+      viewSignIn.classList.toggle('hidden', !signInActive);
+      viewSignUp.classList.toggle('hidden', signInActive);
+    }
+
+    // Auth state → redirect
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = '/EARTH.html';
+      }
+    });
+
+    // Handle redirect result (for popup-blocked cases) without top-level await
+    (async () => {
+      try {
+        const res = await getRedirectResult(auth);
+        if (res && res.user) {
+          window.firebase.logEvent('login', { method: 'google_redirect' });
+          window.location.href = '/EARTH.html';
+        }
+      } catch (err) {
+        console.warn('Redirect result error:', err);
+      }
+    })();
+
+    // Email sign in
+    emailSignInBtn.addEventListener('click', async () => {
+      hideError();
+      const email = document.getElementById('signInEmail').value.trim();
+      const password = document.getElementById('signInPassword').value;
+      try {
+        window.firebase.logEvent('login_attempt', { method: 'email' });
+        await signInWithEmailAndPassword(auth, email, password);
+        window.firebase.logEvent('login', { method: 'email' });
+        window.location.href = '/EARTH.html';
+      } catch (error) {
+        showError(getErrorMessage(error.code));
+        window.firebase.logEvent('login_error', { method: 'email', error: error.code });
+      }
+    });
+
+    // Email sign up
+    emailSignUpBtn.addEventListener('click', async () => {
+      hideError();
+      const name = document.getElementById('signUpName').value.trim();
+      const email = document.getElementById('signUpEmail').value.trim();
+      const password = document.getElementById('signUpPassword').value;
+      const confirm = document.getElementById('signUpConfirm').value;
+      if (password !== confirm) { return showError('Passwords do not match'); }
+      try {
+        window.firebase.logEvent('sign_up_attempt', { method: 'email' });
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) { try { await updateProfile(cred.user, { displayName: name }); } catch(e){} }
+        window.firebase.logEvent('sign_up', { method: 'email' });
+        window.location.href = '/EARTH.html';
+      } catch (error) {
+        showError(getErrorMessage(error.code));
+        window.firebase.logEvent('sign_up_error', { method: 'email', error: error.code });
+      }
+    });
+
+    // Forgot password
+    forgotBtn.addEventListener('click', async () => {
+      hideError();
+      const email = document.getElementById('signInEmail').value.trim();
+      if (!email) return showError('Enter your email to reset password');
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showError('Password reset email sent', true);
+      } catch (error) {
+        showError(getErrorMessage(error.code));
+      }
+    });
+
+    // Google sign (reused for both buttons)
+    const onGoogleClick = async (action) => {
+      hideError();
+      try {
+        window.firebase.logEvent(`${action}_attempt`, { method: 'google' });
+        await signInWithPopup(auth, provider);
+        window.firebase.logEvent(action, { method: 'google' });
+        window.location.href = '/EARTH.html';
+      } catch (error) {
+        if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/operation-not-supported-in-this-environment') {
+          try {
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch (redirectErr) {
+            showError(getErrorMessage(redirectErr.code));
+            window.firebase.logEvent(`${action}_error`, { method: 'google_redirect', error: redirectErr.code });
+            return;
+          }
+        }
+        showError(getErrorMessage(error.code));
+        window.firebase.logEvent(`${action}_error`, { method: 'google', error: error.code });
+      }
+    };
+    googleSignInBtn.addEventListener('click', () => onGoogleClick('sign_in'));
+    googleSignUpBtn.addEventListener('click', () => onGoogleClick('sign_up'));
+
+    // Error helpers
+    function showError(msg, success=false) {
+      errorToast.textContent = msg;
+      errorToast.classList.remove('hidden');
+      errorToast.className = 'mx-6 mb-5 rounded-md px-3 py-2 text-xs ' + (success ? 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-300' : 'border border-red-400/40 bg-red-500/10 text-red-300');
+    }
+    function hideError() { errorToast.classList.add('hidden'); }
+
+    function getErrorMessage(code) {
+      const map = {
+        'auth/user-not-found': 'No account found with this email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/email-already-in-use': 'Email already in use.',
+        'auth/weak-password': 'Use at least 6 characters.',
+        'auth/invalid-email': 'Enter a valid email address.',
+        'auth/popup-closed-by-user': 'Popup closed before completing sign in.',
+        'auth/cancelled-popup-request': 'Cancelled previous popup request.',
+        'auth/operation-not-supported-in-this-environment': 'Popup not supported; using redirect.',
+      };
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+  </script>
+</body>
+</html>
