@@ -2,6 +2,7 @@
 // Docs: https://firebase.google.com/docs/web/setup#available-libraries
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-analytics.js';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -18,9 +19,27 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Expose minimal global for other modules
+// Initialize Analytics (only in production)
+let analytics = null;
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Analytics initialization failed:', error);
+  }
+}
+
+// Expose global for other modules
 window.firebase = {
   app,
-  analytics: null,
-  logEvent: () => {}, // no-op to avoid errors when analytics is unavailable
+  analytics,
+  logEvent: (eventName, parameters = {}) => {
+    if (analytics) {
+      try {
+        analytics.logEvent(eventName, parameters);
+      } catch (error) {
+        console.warn('Analytics event failed:', error);
+      }
+    }
+  }
 };

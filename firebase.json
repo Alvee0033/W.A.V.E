@@ -6,9 +6,15 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [ {
-      "source": "**",
-      "destination": "/LOGIN.html"
-    } ]
+    "rewrites": [
+      {
+        "source": "/",
+        "destination": "/EARTH.html"
+      },
+      {
+        "source": "/**",
+        "destination": "/EARTH.html"
+      }
+    ]
   }
 }

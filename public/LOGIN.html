@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script type="module" src="./script/firebase-init.js"></script>
+  <script type="module" src="./script/auth.js"></script>
   <style>
     :root { color-scheme: dark; }
     body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
@@ -123,25 +124,9 @@
 
   <!-- Auth Logic -->
   <script type="module">
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signInWithRedirect,
-      getRedirectResult,
-      onAuthStateChanged,
-      signOut,
-      createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
-      updateProfile,
-      sendPasswordResetEmail
-    } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
+    import authManager from './script/auth.js';
 
-    const auth = getAuth(window.firebase.app);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-
-    // DOM
+    // DOM elements
     const tabSignIn = document.getElementById('tabSignIn');
     const tabSignUp = document.getElementById('tabSignUp');
     const viewSignIn = document.getElementById('viewSignIn');
@@ -157,6 +142,7 @@
     // Tab switching
     tabSignIn.addEventListener('click', () => switchTab('in'));
     tabSignUp.addEventListener('click', () => switchTab('up'));
+    
     function switchTab(which) {
       const signInActive = which === 'in';
       tabSignIn.className = 'rounded-md px-3 py-1.5 ' + (signInActive ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'text-zinc-400 hover:text-zinc-100');
@@ -165,39 +151,39 @@
       viewSignUp.classList.toggle('hidden', signInActive);
     }
 
-    // Auth state → redirect
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = '/EARTH.html';
-      }
-    });
-
-    // Handle redirect result (for popup-blocked cases) without top-level await
-    (async () => {
-      try {
-        const res = await getRedirectResult(auth);
-        if (res && res.user) {
-          window.firebase.logEvent('login', { method: 'google_redirect' });
+    // Auth state listener - redirect if already logged in
+    authManager.addListener((event, data) => {
+      if (event === 'login' || event === 'ready') {
+        if (data.user) {
           window.location.href = '/EARTH.html';
         }
-      } catch (err) {
-        console.warn('Redirect result error:', err);
       }
-    })();
+    });
 
     // Email sign in
     emailSignInBtn.addEventListener('click', async () => {
       hideError();
       const email = document.getElementById('signInEmail').value.trim();
       const password = document.getElementById('signInPassword').value;
+      
+      if (!email || !password) {
+        return showError('Please fill in all fields');
+      }
+
       try {
         window.firebase.logEvent('login_attempt', { method: 'email' });
-        await signInWithEmailAndPassword(auth, email, password);
-        window.firebase.logEvent('login', { method: 'email' });
-        window.location.href = '/EARTH.html';
+        const result = await authManager.signInWithEmail(email, password);
+        
+        if (result.success) {
+          window.firebase.logEvent('login', { method: 'email' });
+          window.location.href = '/EARTH.html';
+        } else {
+          showError(result.error);
+          window.firebase.logEvent('login_error', { method: 'email', error: result.error });
+        }
       } catch (error) {
-        showError(getErrorMessage(error.code));
-        window.firebase.logEvent('login_error', { method: 'email', error: error.code });
+        showError('An unexpected error occurred');
+        console.error('Login error:', error);
       }
     });
 
@@ -208,16 +194,33 @@
       const email = document.getElementById('signUpEmail').value.trim();
       const password = document.getElementById('signUpPassword').value;
       const confirm = document.getElementById('signUpConfirm').value;
-      if (password !== confirm) { return showError('Passwords do not match'); }
+      
+      if (!email || !password || !confirm) {
+        return showError('Please fill in all fields');
+      }
+      
+      if (password !== confirm) {
+        return showError('Passwords do not match');
+      }
+      
+      if (password.length < 6) {
+        return showError('Password must be at least 6 characters');
+      }
+
       try {
         window.firebase.logEvent('sign_up_attempt', { method: 'email' });
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (name) { try { await updateProfile(cred.user, { displayName: name }); } catch(e){} }
-        window.firebase.logEvent('sign_up', { method: 'email' });
-        window.location.href = '/EARTH.html';
+        const result = await authManager.signUpWithEmail(email, password, name);
+        
+        if (result.success) {
+          window.firebase.logEvent('sign_up', { method: 'email' });
+          window.location.href = '/EARTH.html';
+        } else {
+          showError(result.error);
+          window.firebase.logEvent('sign_up_error', { method: 'email', error: result.error });
+        }
       } catch (error) {
-        showError(getErrorMessage(error.code));
-        window.firebase.logEvent('sign_up_error', { method: 'email', error: error.code });
+        showError('An unexpected error occurred');
+        console.error('Sign up error:', error);
       }
     });
 
@@ -225,62 +228,76 @@
     forgotBtn.addEventListener('click', async () => {
       hideError();
       const email = document.getElementById('signInEmail').value.trim();
-      if (!email) return showError('Enter your email to reset password');
+      
+      if (!email) {
+        return showError('Enter your email to reset password');
+      }
+
       try {
-        await sendPasswordResetEmail(auth, email);
-        showError('Password reset email sent', true);
+        const result = await authManager.resetPassword(email);
+        
+        if (result.success) {
+          showError('Password reset email sent. Check your inbox.', true);
+        } else {
+          showError(result.error);
+        }
       } catch (error) {
-        showError(getErrorMessage(error.code));
+        showError('Failed to send reset email');
+        console.error('Reset password error:', error);
       }
     });
 
-    // Google sign (reused for both buttons)
-    const onGoogleClick = async (action) => {
+    // Google sign in (both buttons use the same method)
+    const handleGoogleAuth = async (action) => {
       hideError();
+      
       try {
         window.firebase.logEvent(`${action}_attempt`, { method: 'google' });
-        await signInWithPopup(auth, provider);
-        window.firebase.logEvent(action, { method: 'google' });
-        window.location.href = '/EARTH.html';
-      } catch (error) {
-        if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/operation-not-supported-in-this-environment') {
-          try {
-            await signInWithRedirect(auth, provider);
-            return;
-          } catch (redirectErr) {
-            showError(getErrorMessage(redirectErr.code));
-            window.firebase.logEvent(`${action}_error`, { method: 'google_redirect', error: redirectErr.code });
+        const result = await authManager.signInWithGoogle();
+        
+        if (result.success) {
+          if (result.redirect) {
+            // Will be handled by redirect result
             return;
           }
+          window.firebase.logEvent(action, { method: 'google' });
+          window.location.href = '/EARTH.html';
+        } else {
+          showError(result.error);
+          window.firebase.logEvent(`${action}_error`, { method: 'google', error: result.error });
         }
-        showError(getErrorMessage(error.code));
-        window.firebase.logEvent(`${action}_error`, { method: 'google', error: error.code });
+      } catch (error) {
+        showError('An unexpected error occurred');
+        console.error('Google auth error:', error);
       }
     };
-    googleSignInBtn.addEventListener('click', () => onGoogleClick('sign_in'));
-    googleSignUpBtn.addEventListener('click', () => onGoogleClick('sign_up'));
+
+    googleSignInBtn.addEventListener('click', () => handleGoogleAuth('sign_in'));
+    googleSignUpBtn.addEventListener('click', () => handleGoogleAuth('sign_up'));
 
     // Error helpers
-    function showError(msg, success=false) {
+    function showError(msg, success = false) {
       errorToast.textContent = msg;
       errorToast.classList.remove('hidden');
-      errorToast.className = 'mx-6 mb-5 rounded-md px-3 py-2 text-xs ' + (success ? 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-300' : 'border border-red-400/40 bg-red-500/10 text-red-300');
+      errorToast.className = 'mx-6 mb-5 rounded-md px-3 py-2 text-xs ' + 
+        (success ? 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-300' : 
+                  'border border-red-400/40 bg-red-500/10 text-red-300');
     }
-    function hideError() { errorToast.classList.add('hidden'); }
 
-    function getErrorMessage(code) {
-      const map = {
-        'auth/user-not-found': 'No account found with this email.',
-        'auth/wrong-password': 'Incorrect password.',
-        'auth/email-already-in-use': 'Email already in use.',
-        'auth/weak-password': 'Use at least 6 characters.',
-        'auth/invalid-email': 'Enter a valid email address.',
-        'auth/popup-closed-by-user': 'Popup closed before completing sign in.',
-        'auth/cancelled-popup-request': 'Cancelled previous popup request.',
-        'auth/operation-not-supported-in-this-environment': 'Popup not supported; using redirect.',
-      };
-      return map[code] || 'Something went wrong. Please try again.';
+    function hideError() {
+      errorToast.classList.add('hidden');
     }
+
+    // Handle Enter key for form submission
+    document.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (!viewSignIn.classList.contains('hidden')) {
+          emailSignInBtn.click();
+        } else {
+          emailSignUpBtn.click();
+        }
+      }
+    });
   </script>
 </body>
 </html>

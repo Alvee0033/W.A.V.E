@@ -258,6 +258,38 @@
     showLayerNote('imerg', `IMERG — Precipitation rate (30‑min) at ${timeStr}.`);
   }
 
+  // Thermal anomalies layer for wildfires (using VIIRS data)
+  let thermalAnomaliesLayer = null;
+  function addThermalAnomaliesLayer() {
+    try {
+      if (thermalAnomaliesLayer) {
+        viewer.imageryLayers.remove(thermalAnomaliesLayer, false);
+        thermalAnomaliesLayer = null;
+      }
+    } catch(_) {}
+
+    const thermalProvider = new Cesium.WebMapServiceImageryProvider({
+      url: 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi',
+      layers: 'VIIRS_NOAA21_Thermal_Anomalies_375m_All',
+      parameters: {
+        service: 'WMS',
+        request: 'GetMap',
+        version: '1.3.0',
+        styles: '',
+        format: 'image/png',
+        transparent: true,
+        time: '2025-10-03' // Using the date from the provided URL as default
+      },
+      tilingScheme: new Cesium.GeographicTilingScheme()
+    });
+
+    thermalAnomaliesLayer = viewer.imageryLayers.addImageryProvider(thermalProvider);
+    thermalAnomaliesLayer.alpha = 0.8;
+    thermalAnomaliesLayer.show = true;
+    try { viewer.imageryLayers.raiseToTop(thermalAnomaliesLayer); } catch(_) {}
+    showLayerNote('thermal', 'VIIRS Thermal Anomalies — Active fire detection (375m resolution)');
+  }
+
   const LEGEND_HIDE_HEIGHT = 15000000;
   const legendAnchor = { lon: null, lat: null };
   function updateLegend() {
@@ -356,6 +388,7 @@
     co: { title: 'Carbon Monoxide @ 500 hPa (Day)', desc: 'AIRS L2 CO volume mixing ratio at ~500 hPa. Useful for pollution and fire plume tracking.', cadence: 'orbit granules', units: 'ppbv (colorized)', source: 'NASA GIBS / AIRS L2', link: 'https://airs.jpl.nasa.gov/' },
     misr: { title: 'MISR Infrared Color Radiance (Monthly Avg)', desc: 'MISR monthly average radiance composited in infrared color.', cadence: 'monthly', units: 'radiance (colorized)', source: 'NASA GIBS / MISR', link: 'https://misr.jpl.nasa.gov/' },
     imerg: { title: 'IMERG Precipitation Rate (30‑min)', desc: 'Near‑real‑time precipitation rate from GPM IMERG highlighting rain/snow intensity.', cadence: '30‑minute', units: 'mm/hr', source: 'NASA GIBS / GPM IMERG', link: 'https://gpm.nasa.gov/data/imerg' },
+    thermal: { title: 'VIIRS Thermal Anomalies (375m)', desc: 'VIIRS active fire detection showing thermal hotspots and fire intensity at 375m resolution.', cadence: 'daily', units: 'thermal anomalies (colorized)', source: 'NASA GIBS / VIIRS NOAA-21', link: 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi' },
     settlements: { title: 'GRUMP Settlements', desc: 'Global Rural‑Urban Mapping Project settlement locations showing human population centers worldwide.', cadence: 'static', units: 'point locations', source: 'NASA GIBS / GRUMP', link: 'https://sedac.ciesin.columbia.edu/data/collection/grump-v1' },
     cloudPressure: { title: 'Cloud Top Pressure (Aqua)', desc: 'MODIS Aqua cloud top pressure measurements during daytime. Shows atmospheric pressure at cloud tops, useful for weather analysis and storm tracking.', cadence: 'daily', units: 'hPa (colorized)', source: 'NASA GIBS / MODIS Aqua', link: 'https://wiki.earthdata.nasa.gov/display/GIBS' },
     ceresFlux: { title: 'CERES Longwave Flux (Monthly)', desc: 'CERES EBAF TOA CRE Longwave Flux Monthly shows outgoing longwave radiation at the top of the atmosphere. Essential for understanding Earth\'s energy balance and climate.', cadence: 'monthly', units: 'W/m² (colorized)', source: 'NASA GIBS / CERES EBAF', link: 'https://ceres.larc.nasa.gov/data/' },
@@ -431,25 +464,68 @@
   ];
 
   const eonetDataSources = {};
-  eonetCfgs.forEach(cfg => {
+  // Initialize global anomalies array
+  try { window.__allAnomalies = window.__allAnomalies || []; } catch(_) { window.__allAnomalies = []; }
+
+  // Fetch all EONET data and render when complete
+  const eonetPromises = eonetCfgs.map(cfg => {
     const linkEl = document.getElementById(cfg.linkId); if (linkEl) linkEl.href = cfg.url;
     const ds = new Cesium.CustomDataSource('eonet-' + cfg.id); viewer.dataSources.add(ds); ds.show = false; eonetDataSources[cfg.id] = ds;
-    fetch(cfg.url).then(r => r.json()).then(json => {
-      const events = json && json.events ? json.events : [];
-      events.forEach(evt => addEventEntityTo(ds, evt, cfg.polygonColor, cfg.pointBillboard));
-      try { window.__allAnomalies = window.__allAnomalies || []; } catch(_) {}
-      const pushSafe = (rec) => { try { window.__allAnomalies.push(rec); } catch(_) {} };
-      events.forEach(evt => {
-        const title = evt.title || 'Event'; const geoms = Array.isArray(evt.geometry) ? evt.geometry : [];
-        geoms.forEach(g => {
-          const when = g.date || ''; const coords = g.coordinates; let lat = null, lon = null;
-          if (Array.isArray(coords) && typeof coords[0] === 'number' && typeof coords[1] === 'number') { lon = coords[0]; lat = coords[1]; }
-          pushSafe({ category: cfg.id, title, date: when, lon, lat });
+
+    return fetch(cfg.url)
+      .then(r => r.json())
+      .then(json => {
+        const events = json && json.events ? json.events : [];
+        events.forEach(evt => addEventEntityTo(ds, evt, cfg.polygonColor, cfg.pointBillboard));
+
+        // Store anomalies data
+        events.forEach(evt => {
+          const title = evt.title || 'Event'; const geoms = Array.isArray(evt.geometry) ? evt.geometry : [];
+          geoms.forEach(g => {
+            const when = g.date || ''; const coords = g.coordinates; let lat = null, lon = null;
+            if (Array.isArray(coords) && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+              lon = coords[0]; lat = coords[1];
+            }
+            window.__allAnomalies.push({ category: cfg.id, title, date: when, lon, lat });
+          });
         });
+
+        return events.length;
+      })
+      .catch(error => {
+        console.warn(`Failed to load ${cfg.id} data:`, error);
+        return 0;
       });
-    }).catch(() => {});
+  });
+
+  // Wait for all API calls to complete, then render anomalies
+  Promise.all(eonetPromises).then(() => {
+    console.log(`✅ Loaded ${window.__allAnomalies.length} total anomalies from all categories`);
+
+    // Group and log by category for debugging
+    const byCategory = {};
+    window.__allAnomalies.forEach(anomaly => {
+      byCategory[anomaly.category] = (byCategory[anomaly.category] || 0) + 1;
+    });
+    console.log('📊 Anomalies by category:', byCategory);
+
+    // Show wildfire count specifically since it's now instant
+    const wildfireCount = byCategory.wildfires || 0;
+    console.log(`🔥 Wildfire events ready for instant loading: ${wildfireCount}`);
+
+    // Initial render after all data is loaded
+    if (typeof renderAnomalies === 'function') {
+      renderAnomalies();
+    }
+  });
+
+  // Set up toggle event listeners
+  eonetCfgs.forEach(cfg => {
     const toggleEl = document.getElementById(cfg.toggleId);
-    toggleEl?.addEventListener('change', (e) => { const checked = e.target?.checked ?? toggleEl.checked; ds.show = checked; });
+    toggleEl?.addEventListener('change', (e) => {
+      const checked = e.target?.checked ?? toggleEl.checked;
+      eonetDataSources[cfg.id].show = checked;
+    });
   });
 
   const anomalyBtn = document.getElementById('anomalyButton');
@@ -503,13 +579,11 @@
   function handlePageChange(page) {
     switch(page) {
       case 'dashboard': console.log('Dashboard page active'); break;
-      case 'prediction': console.log('Prediction page - coming soon'); alert('Prediction page is coming soon! This will include weather forecasting, climate predictions, and environmental modeling.'); break;
-      case 'community': console.log('Community page - coming soon'); alert('Community page is coming soon! This will include user discussions, shared visualizations, and collaborative research tools.'); break;
+      case 'prediction': console.log('Navigating to Prediction page'); window.location.href = '/public/PREDICTION.html'; break;
+      case 'community': console.log('Navigating to Community page'); window.location.href = '/public/COMMUNITY.html'; break;
     }
   }
-  pageDashboard?.addEventListener('click', () => setActivePage('dashboard'));
-  pagePrediction?.addEventListener('click', () => setActivePage('prediction'));
-  pageCommunity?.addEventListener('click', () => setActivePage('community'));
+  // Dock button event listeners removed - HTML onclick handlers handle navigation directly
 
   function parseDateSafe(s) { const d = new Date(s); return isNaN(d.getTime()) ? null : d; }
   function renderAnomalies() {
@@ -521,7 +595,14 @@
       if (currentFilter !== 'all') { const categoryMap = { 'wildfires': 'wildfires', 'floods': 'floods', 'storms': 'severeStorms', 'dust': 'dustHaze' }; if (rec.category !== categoryMap[currentFilter]) return false; }
       return true;
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
-    if (anomalySummary) anomalySummary.textContent = `${filtered.length} event(s)`;
+    // Show enhanced message for wildfires since they're instant
+    if (anomalySummary) {
+      if (currentFilter === 'wildfires') {
+        anomalySummary.textContent = `${filtered.length} wildfire event(s) - Instant results!`;
+      } else {
+        anomalySummary.textContent = `${filtered.length} event(s)`;
+      }
+    }
     if (anomalyList) anomalyList.innerHTML = '';
     filtered.forEach(rec => {
       const row = document.createElement('div'); row.className = 'py-2 px-1 hover:bg-white/5';
@@ -544,8 +625,19 @@
     anomalyList?.querySelectorAll('button[data-goto]').forEach(btn => {
       btn.addEventListener('click', () => {
         const [lonStr, latStr] = btn.getAttribute('data-goto').split(','); const lon = parseFloat(lonStr), lat = parseFloat(latStr);
-        if (!isNaN(lon) && !isNaN(lat)) { viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 1500000) }); setTimeout(() => positionLegendAt(lon, lat), 400); }
-        const category = btn.getAttribute('data-category'); const dateISO = btn.getAttribute('data-date'); if (category === 'severeStorms' && dateISO) { addOrUpdateIMERGLayer(dateISO); }
+        if (!isNaN(lon) && !isNaN(lat)) {
+          viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 1500000) });
+          setTimeout(() => positionLegendAt(lon, lat), 400);
+        }
+        const category = btn.getAttribute('data-category');
+        const dateISO = btn.getAttribute('data-date');
+
+        // Add appropriate overlay layers based on anomaly category
+        if (category === 'severeStorms' && dateISO) {
+          addOrUpdateIMERGLayer(dateISO);
+        } else if (category === 'wildfires') {
+          addThermalAnomaliesLayer();
+        }
       });
     });
     anomalyList?.querySelectorAll('button[data-details]').forEach(btn => {
@@ -553,8 +645,23 @@
         const payload = btn.getAttribute('data-details'); if (!payload) return; const [category, dateStr, coordsStr, titleEnc] = payload.split('|');
         const [lonStr, latStr] = (coordsStr || '').split(','); const lon = parseFloat(lonStr), lat = parseFloat(latStr); const title = decodeURIComponent(titleEnc || 'Event'); if (isNaN(lon) || isNaN(lat)) return;
         const span = 12; const minLon = Math.max(-180, lon - span); const maxLon = Math.min(180, lon + span); const minLat = Math.max(-90, lat - span/2); const maxLat = Math.min(90, lat + span/2);
-        const trueColor = 'VIIRS_NOAA21_CorrectedReflectance_TrueColor'; const precip = 'IMERG_Precipitation_Rate_30min'; const labels = 'Reference_Labels_15m'; const features = 'Reference_Features_15m'; const coast = 'Coastlines_15m(hidden)';
-        const showPrecip = (category === 'severeStorms' || category === 'floods'); const layers = [labels, features, coast, trueColor].concat(showPrecip ? [precip] : []);
+        const trueColor = 'VIIRS_NOAA21_CorrectedReflectance_TrueColor';
+        const precip = 'IMERG_Precipitation_Rate_30min';
+        const modisThermal = 'MODIS_Combined_Thermal_Anomalies_Night';
+        const viirsThermal = 'VIIRS_NOAA21_Thermal_Anomalies_375m_All';
+        const labels = 'Reference_Labels_15m';
+        const features = 'Reference_Features_15m';
+        const coast = 'Coastlines_15m(hidden)';
+
+        // Choose layers based on anomaly category
+        let additionalLayers = [];
+        if (category === 'severeStorms') {
+          additionalLayers = [precip];
+        } else if (category === 'wildfires') {
+          additionalLayers = [modisThermal, viirsThermal];
+        }
+
+        const layers = [labels, features, coast, trueColor].concat(additionalLayers);
         const t = (new Date(dateStr)).toISOString().slice(0,10) + '-T00%3A00%3A00Z'; const v = `${minLon},${minLat},${maxLon},${maxLat}`;
         const worldviewUrl = `https://worldview.earthdata.nasa.gov/?v=${encodeURIComponent(v)}&z=4&ics=true&ici=5&icd=30&l=${encodeURIComponent(layers.join(','))}&lg=false&t=${t}`;
         window.open(worldviewUrl, '_blank', 'noopener,noreferrer');
@@ -562,12 +669,21 @@
     });
   }
 
-  anomalyApply?.addEventListener('click', renderAnomalies);
+  // Wildfire data is now loaded instantly with other EONET data
+
+  anomalyApply?.addEventListener('click', () => {
+    // For wildfires, data is already loaded instantly - no need for loading animation
+    if (currentFilter === 'wildfires') {
+      // Wildfire data is already fetched and stored in window.__allAnomalies
+      renderAnomalies();
+    } else {
+      renderAnomalies();
+    }
+  });
   anomalyReset?.addEventListener('click', () => { if (anomalyFrom) anomalyFrom.value = ''; if (anomalyTo) anomalyTo.value = ''; renderAnomalies(); });
   const now = new Date(); const past = new Date(now.getTime() - 90*24*60*60*1000);
   if (anomalyTo) anomalyTo.value = now.toISOString().slice(0,10);
   if (anomalyFrom) anomalyFrom.value = past.toISOString().slice(0,10);
-  setTimeout(renderAnomalies, 1500);
 
   const wvBackdrop = document.getElementById('wvBackdrop');
   const wvClose = document.getElementById('wvClose');
